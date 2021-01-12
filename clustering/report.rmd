@@ -1,0 +1,36 @@
+---
+title: "Genre clustering of music reviews"
+author: "Tudor Andrei Dumitrascu"
+geometry: margin=2cm
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+fontsize: 12pt
+output:
+ pdf_document:
+  latex_engine: xelatex
+  number_sections: true
+---
+
+
+# Introduction
+
+# Dataset
+
+# Methods
+
+## Baseline comparison
+
+## Kmeans
+
+## DBSCAN
+
+# Results
+
+| Method            | Accuracy |
+| ---               | ---      |
+| Random prediction | 11.1%    |
+| RandomForest      | 62%      |
+| ---               | ---      |
+| Kmeans            | 62%      |
+| DBSCAN            | 62%      |
+
+# Conclusion
