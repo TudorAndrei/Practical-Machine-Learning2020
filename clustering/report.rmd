@@ -1,24 +1,45 @@
 ---
 title: "Genre clustering of music reviews"
+subtitle: "PML Project 2"
 author: "Tudor Andrei Dumitrascu"
 geometry: margin=2cm
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 fontsize: 12pt
+header-includes:
+   - \usepackage{graphicx}
+   - \usepackage{subcaption}
+   - \usepackage{float}
 output:
  pdf_document:
   latex_engine: xelatex
   number_sections: true
 bibliography: ./ref/refs.bib
+csl: ieee-with-url.csl
 ---
-
 
 # Introduction
 
-In this project two clustering methods will be compared and evaluated on a text dataset.
+The aim of the project is to cluster music reviews based on genre. This will be achieved by employing two clustering algorithms and evaluating their performance. Along those two, a baseline will be established using random prediction and a RandomForest algorithm.
 
 # Dataset
 
 The dataset consists of album reviews of various music albums from the Pitchfork website. @dataset_pitchfork
+
+The dataset is highly unbalanced, with most of the samples belonging to one class. See Fig. \ref{fig:distribution}
+
+\begin{figure}
+  \includegraphics[width=10cm]{./images/genres_distribution.png}
+  \caption{Genres Distribution}
+  \label{fig:distribution}
+\end{figure}
+
+
+In an attempt to balanced the dataset, two strategies were employed:
+
+- Sampling from the majority dataset, using an upper limit on the number of samples.
+- Sampling from the majority dataset, using an upper limit and removing the classes with low number of samples (i.e. less than 400)
+
+Both of these strategies have provided little to no improvement and also lead to a misleading result, since the goal of the project is to cluster on all of the examples.
 
 ## Preprocessing
 
@@ -35,31 +56,80 @@ For a better result, lemmatization could have been used for the last step. This 
 
 For the final preprocessing step, the whole dataset was processed using the TF-IDF algorithm.
 
-Due to the unbalanced nature of the dataset. See the figure below.
+With the following parameters:
 
-![Genres Distribuition](./images/genres_distribution.png)
+- minimum document frequency: 10
+- maximum document apparitions: 100
+- maximum features: 150
 
-In order to compensate for that the majority classes were down sampled.
-
-Out of all the initial 9 classes, 4 most popular have been used. This was done by sampling trough the classes and keeping only some of the apparitions (i.e. max(rows, upper_limit)) and upper limit was set on some of them.
-
-
-# Methods
-
-In order to have a better overview of the performance of the clustering algorithms, a supervised method was used and also the probability of choosing at random were computed
-
-## Kmeans
-
-Because the number of clusters it is known, we just set it as a parameter to function and train the algorithm on the data.
-
-
-## DBSCAN
+  They were set so that from each category only the relevant words were kept, in order to create a distinction between the genres.
 
 ## PCA and TSNE
 
 In order to test multiple hypothesis, the data was also reduced in dimensions using the PCA and t-SNE, down to two components.
 
 In some of the cases it greatly improved the outcome, especially for the DBSCAN algorithm.
+
+
+# Methods
+
+In order to have a better overview of the performance of the clustering algorithms, a supervised method was used and also the probability of choosing at random were computed.
+
+## Kmeans
+
+Because the number of clusters it is known, we just set it as a parameter to function and train the algorithm on the data.
+
+
+\begin{figure}
+  \centering
+  \begin{subfigure}[b]{0.4\linewidth}
+    \includegraphics[width=\linewidth]{./images/kmeans_pca.png}
+    \caption{Kmeans PCA}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.4\linewidth}
+    \includegraphics[width=\linewidth]{./images/kmeans_tsne.png}
+    \caption{Kmens t-SNE}
+  \end{subfigure}
+  \caption{Kmeans with Dimensionality reduction}
+  \label{fig:kmeans}
+\end{figure}
+
+## DBSCAN
+
+Since the DBSCAN algorithm computes the number of clusters automatically the only parameters that have to be tuned are $\epsilon$ and the minimum of number of points in the neighbourhood.
+
+In order to compute $\epsilon$, we compute the distance using the NearestNeighbours and plot the results.See Fig. \ref{fig:nn}. The value is the one, just before the distance significantly increases. @findeps
+
+\begin{figure}
+  \centering
+  \begin{subfigure}[b]{0.4\linewidth}
+    \includegraphics[width=\linewidth]{./images/dbscan_neighbours_pca.png}
+    \caption{PCA}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.4\linewidth}
+    \includegraphics[width=\linewidth]{./images/dbscan_neighbours_tsne.png}
+    \caption{t-SNE}
+  \end{subfigure}
+  \caption{NearestNeighbours Distances, on the right it's the zoom-in on the elbow area}
+  \label{fig:nn}
+\end{figure}
+
+
+After the value for $\epsilon$ was found, then the min_samples value was searched in order to find proper clusters. I believe that this happens because the clusters are not clearly separated, and the algorithm can group up too many points together even if they are from different classes, or create a lot of clusters based on individual samples. See Fig. \ref{fig:dbscan}
+
+\begin{figure}
+  \centering
+  \begin{subfigure}[b]{0.4\linewidth}
+    \includegraphics[width=\linewidth]{./images/dbscan_pca.png}
+    \caption{PCA}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.4\linewidth}
+    \includegraphics[width=\linewidth]{./images/dbscan_tsne.png}
+    \caption{t-SNE}
+  \end{subfigure}
+  \caption{DBSCAN on PCA and t-SNE data}
+  \label{fig:dbscan}
+\end{figure}
 
 
 # Evaluation and Results
@@ -70,49 +140,31 @@ In order to evaluate the models, a simple function that compares the true labels
 - Homogeneity Score
 - Silhouette Score
 - Accuracy
-   As stated previously the labels cannot be simply compared, but this problem can be overcome. By permutating the columns of the confusion matrix in order to obtain the maximum value on the main diagonal. This permutation process is quite consuming and it's replaced by the Hungarian algorithm @cluster_accuracy @coclust
+   As stated previously the labels cannot be simply compared, but this problem can be overcome. By permuting the columns of the confusion matrix in order to obtain the maximum value on the main diagonal. This permutation process is quite consuming and it's replaced by the Hungarian algorithm @cluster_accuracy @coclust
 
 | Method            | Accuracy | Completeness | Homogeneity | Silhouette |
 | ---               | ---      | ---          | ---         | ---        |
-| Random prediction | 11.1%    | <br>         | <br>        | <br>       |
-| RandomForest      | 62%      | <br>         | <br>        | <br>       |
-| <br>              | <br>     | <br>         | <br>        | <br>       |
-| Kmeans            | 62%      | 62%          | 62%         | 62%        |
-| - PCA             | 62%      | 62%          | 62%         | 62%        |
-| - t-SNE           | 62%      | 62%          | 62%         | 62%        |
-| <br>              | <br>     | <br>         | <br>        | <br>       |
+| Random prediction | 12.72%   |              |             |            |
+| RandomForest      | 70%      |              |             |            |
+| <br>              | <br>     |              |             |            |
+| Kmeans            | 58%      | 0.036        | 0.005       | 0.380      |
+| - PCA             | 43%      | 0.080        | 0.060       | 0.430      |
+| - t-SNE           | 20%      | 0.010        | 0.014       | 0.323      |
+|                   |          |              |             |            |
 | DBSCAN            |          |              |             |            |
-| - PCA             | 62%      | 62%          | 62%         | 62%        |
-| - t-SNE           | 62%      | 62%          | 62%         | 62%        |
+| - PCA             | 47%      | 0.008        | 0.004       | 0.438      |
+| - t-SNE           | 42%      | 0.061        | 0.093       | 0.053      |
 
-Completeness Score:	 0.03688
-homogeneity Score:	 0.00588
-Accuracy:	 0.58135
-Silhouette Score:	 0.38084
+What it can bee seen from the metrics is that most clustering algorithm do a poor job in creating meaningful clusters from the given data. From the Completeness score it's clear that the data from the same cluster is spread across different clusters, and from the Homogeneity score it's clear that a cluster contains data from different labels. The fact that clusters contain different labels it's also given from the Silhouette score.
 
-
-Completeness Score:	 0.01014
-homogeneity Score:	 0.01459
-Accuracy:	 0.20616
-Silhouette Score:	 0.3235599994659424
-
-Completeness Score:	 0.01746
-homogeneity Score:	 0.01273
-Accuracy:	 0.48036
-Silhouette Score:	 0.69976
-
-dbscan
-Completeness Score:	 0.06172
-homogeneity Score:	 0.09467
-Accuracy:	 0.42553
-Silhouette Score:	 0.05347000062465668
-
-
-Completeness Score:	 0.00847
-homogeneity Score:	 0.00494
-Accuracy:	 0.47492
-Silhouette Score:	 0.43861
+\pagebreak
 
 # Conclusion
+
+As expected the clustering algorithms have really low accuracy due to the fact that they are not supposed to be used for classification task. Even so, the quality of the clusters is really low, due to the overlapping of the data. One could argue that it's really hard to determine a difference between the data since all the text belong to one overall class "Music". Therefore the words that could make the difference from genre to another are unique words, which cannot be guaranteed to be used in multiple reviews of the same genre.
+
+In conclusion, the aim crating clusters of genres on music reviews is really hard, almost impossible.
+
+
 
 # References
