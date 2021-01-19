@@ -39,7 +39,7 @@ In an attempt to balanced the dataset, two strategies were employed:
 - Sampling from the majority dataset, using an upper limit on the number of samples.
 - Sampling from the majority dataset, using an upper limit and removing the classes with low number of samples (i.e. less than 400)
 
-Both of these strategies have provided little to no improvement and also lead to a misleading result, since the goal of the project is to cluster on all of the examples.
+The last sampling strategy worked a bit better than the rest. If all the samples would have been used, then the majority class would have distorted the dimensionality reduction results. The upper limit in this case it 1000 samples.
 
 ## Preprocessing
 
@@ -142,20 +142,21 @@ In order to evaluate the models, a simple function that compares the true labels
 - Accuracy
    As stated previously the labels cannot be simply compared, but this problem can be overcome. By permuting the columns of the confusion matrix in order to obtain the maximum value on the main diagonal. This permutation process is quite consuming and it's replaced by the Hungarian algorithm @cluster_accuracy @coclust
 
-| Method            | Accuracy | Completeness | Homogeneity | Silhouette |
-| ---               | ---      | ---          | ---         | ---        |
-| Random prediction | 12.72%   |              |             |            |
-| RandomForest      | 70%      |              |             |            |
-| <br>              | <br>     |              |             |            |
-| Kmeans            | 58%      | 0.036        | 0.005       | 0.380      |
-| - PCA             | 43%      | 0.080        | 0.060       | 0.430      |
-| - t-SNE           | 20%      | 0.010        | 0.014       | 0.323      |
-|                   |          |              |             |            |
-| DBSCAN            |          |              |             |            |
-| - PCA             | 47%      | 0.008        | 0.004       | 0.438      |
-| - t-SNE           | 42%      | 0.061        | 0.093       | 0.053      |
+| Method             | Accuracy | Completeness | Homogeneity | Silhouette |
+| ---                | ---      | ---          | ---         | ---        |
+| Random prediction  | 12.43%   |              |             |            |
+| RandomForest       | 57.99%   |              |             |            |
+| <br>               | <br>     |              |             |            |
+| Kmeans             | 18%      | 0.069        | 0.015       | 0.094      |
+| - t-SNE            | 20%      | 0.040        | 0.040       | 0.374      |
+| - PCA              | 22.8%    | 0.080        | 0.060       | 0.431      |
+|                    |          |              |             |            |
+| DBSCAN             |          |              |             |            |
+| - t-SNE(eps=0.015) | 19.5%    | 0.059        | 0.023       | -0.31      |
+| - PCA (eps=0.005)  | 21.8%    | 0.024        | 0.011       | -0.248     |
 
-What it can bee seen from the metrics is that most clustering algorithm do a poor job in creating meaningful clusters from the given data. From the Completeness score it's clear that the data from the same cluster is spread across different clusters, and from the Homogeneity score it's clear that a cluster contains data from different labels. The fact that clusters contain different labels it's also given from the Silhouette score.
+What it can bee seen from the metrics is that most clustering algorithm do a poor job in creating meaningful clusters from the given data. From the Completeness score it's clear that the data from the same cluster is spread across different clusters, and from the Homogeneity score it's clear that a cluster contains data from different labels. The fact that clusters contain different labels it's also given from the Silhouette score, and in the case of DBSCAN having the negative value indicates overlapping.
+The only class which could be easily identified is the center cluster in the case of t-SNE, which belongs to the label with the most amount of samples.
 
 \pagebreak
 
